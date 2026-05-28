@@ -95,7 +95,14 @@ app.get("/api/hotels/:hotelId/rooms", auth, async (req, res, next) => {
         const hotel_id = Number(req.params.hotelId);
 
         const rooms = await prisma.room.findMany({
-            where: {hotel_id: hotel_id}
+            where: {hotel_id: hotel_id},
+            include: {
+                hotel: {
+                    select: {
+                        name: true
+                    } // <-- סגירת ה-select
+                } // <-- סגירת ה-hotel
+            }
         });
         if(rooms.length === 0) return res.status(404).json("No rooms");
 
@@ -115,7 +122,14 @@ app.get("/api/hotels/:hotelId/rooms/:id", auth, async (req, res, next) => {
             where: {
                     hotel_id: hotel_id,
                     id: room_id
+            },
+                include: {
+                    hotel: {
+                        select: {
+                            name: true // מביא רק את עמודת השם מטבלת המלונות
+                }
             }
+        }
         });
         if(!room) return res.status(404).json("Room not found");
         res.status(200).json(room);

@@ -28,6 +28,7 @@ model Hotel {
   country String
   city String
   number_of_rooms Int
+  image_url String?
 
   rooms Room[]
   reservations Reservation[]
@@ -40,6 +41,7 @@ model Room {
   max_guests Int?
   price Decimal? @db.Decimal(10, 2) // Max 10 digits, 2 after the decimal 
   size Int?
+  image_url String?
 
   hotel Hotel @relation(fields: [hotel_id], references: [id])
   reservations Reservation[]

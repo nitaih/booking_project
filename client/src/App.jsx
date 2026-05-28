@@ -2,6 +2,7 @@ import { Routes, Route, Link, Navigate } from "react-router-dom";
 import Signup from "./Signup";
 import Login from "./Login";
 import Hotels from "./Hotels";
+import RoomsPage from "./RoomsPage";
 
 function Home(){
   return (
@@ -44,6 +45,11 @@ function App() {
             <Route path="/hotels" element={
               <ProtectedRoute>
                 <Hotels />
+              </ProtectedRoute>
+              } />
+            <Route path="/hotels/:hotelId/rooms" element={
+              <ProtectedRoute>
+                <RoomsPage />
               </ProtectedRoute>
               } />
         </Routes>

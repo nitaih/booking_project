@@ -1,63 +1,64 @@
-import { useState, useEffect } from "react";
-import React from 'react';
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom"; // <-- מייבאים את useParams
 import { authHeaders } from "./AuthHeaders";
-import { Routes, Route, Link, Navigate } from "react-router-dom";
-import RoomsPage from "./RoomsPage";
 
-export default function Hotels(){
-    const [hotels, setHotels] = useState([]);
+export default function RoomsPage(){
+    const {hotelId} = useParams();
+
+    const [rooms, setRooms] = useState([]);
     const [loading, setLoading] = useState(true);
-
     const API_base = "http://localhost:3000/api";
+
     useEffect(() => {
-        async function loadHotels() {
+        async function loadRooms() {
             try {
-                const res = await fetch(`${API_base}/hotels`,{
+                const res = await fetch(`${API_base}/hotels/${hotelId}/rooms`,{
                     method: "GET",
                     headers: authHeaders()
                 });
                 const data = await res.json();
-                setHotels(data);
+                setRooms(data); 
             } catch (error) {
-                console.error("Error loading hotels:", error);
-                
-            } finally{
-                setLoading(false);
+                console.error("Error loading rooms:", error);
+            } finally {
+                setLoading(false)
             }
-        }
-        loadHotels();
-    }, []);
-    if(loading) return <p>Loading hotels...</p>;
+            
+        };
+        loadRooms();
+
+    }, [hotelId]);
+    const hotelName = rooms[0]?.hotel?.name;
 
     return (
         <div>
-            <h1>Our Hotels:</h1>
+            <h1>{hotelName}</h1>       
             <ul style={styles.gridList}>
                 {
-                    hotels.map(h => (
-                        <li key={h.id} style={{ listStyleType: 'none' }}>
-                            <Link to={`/hotels/${h.id}/rooms`} style={styles.cardLink}>
+                    rooms.map(r => (
+                        <li key={r.id} style={{ listStyleType: 'none' }}>
+                            {/* <Link to={`/hotels/${h.id}/rooms`} style={styles.cardLink}> */}
                                 <div style={styles.imageWrapper}>
                                     <img 
-                                    src={h.image_url || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500&q=80'} 
-                                    alt={h.name}
+                                    src={r.image_url || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500&q=80'} 
+                                    alt={r.name}
                                     style={styles.image}
                                     loading="lazy"
                                     />
                                     {/* דירוג כוכבים צף */}
                                     <div style={styles.badge}>
-                                    ⭐ {h.stars} כוכבים
+                                    {r.price }₪ ללילה
                                     </div>
                                 </div>
 
                                 {/* תוכן הכרטיסייה */}
                                 <div style={styles.content} dir="rtl">
-                                    <h3 style={styles.title}>{h.name}</h3>
-                                    <p style={styles.location}>📍 {h.city}, {h.country}</p>
+                                    <h3 style={styles.title}>{r.name}</h3>
+                                    <p style={styles.location}>Guest Capacity {r.max_guests} | Size: {r.size}</p>
 
                                     {/* חלק תחתון - חדרים וכפתור */}
                                     <div style={styles.footer}>
-                                    <span style={styles.rooms}>חדרים: {h.number_of_rooms}</span>
+                                    {/* <span style={styles.rooms}>Size: {r.size}</span> */}
                                     <button 
                                         style={styles.button}
                                         onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
@@ -67,7 +68,7 @@ export default function Hotels(){
                                     </button>
                                     </div>
                                 </div>
-                            </Link>
+                            {/* </Link> */}
                         </li>
                     ))
                 }
