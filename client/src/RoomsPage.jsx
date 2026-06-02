@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom"; // <-- מייבאים את useParams
 import { authHeaders } from "./AuthHeaders";
+import { Routes, Route, Link, Navigate } from "react-router-dom";
 
 export default function RoomsPage(){
     const {hotelId} = useParams();
@@ -37,7 +38,7 @@ export default function RoomsPage(){
                 {
                     rooms.map(r => (
                         <li key={r.id} style={{ listStyleType: 'none' }}>
-                            {/* <Link to={`/hotels/${h.id}/rooms`} style={styles.cardLink}> */}
+                            <Link to={`/hotels/${hotelId}/rooms/${r.id}`} style={styles.cardLink}>
                                 <div style={styles.imageWrapper}>
                                     <img 
                                     src={r.image_url || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500&q=80'} 
@@ -68,7 +69,7 @@ export default function RoomsPage(){
                                     </button>
                                     </div>
                                 </div>
-                            {/* </Link> */}
+                            </Link>
                         </li>
                     ))
                 }

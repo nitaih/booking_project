@@ -222,7 +222,10 @@ app.post("/api/hotels/:hotel_id/rooms/:room_id/reservations", auth, async (req, 
                     total_price: total_price
                 }
     });
-    res.status(200).json("Room booked successfully")
+    res.status(200).json({message: "Room booked successfully",
+        details: reserveRoom
+    }
+    )
     } catch(err){
         next(err);
     }

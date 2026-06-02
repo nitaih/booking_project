@@ -3,6 +3,8 @@ import Signup from "./Signup";
 import Login from "./Login";
 import Hotels from "./Hotels";
 import RoomsPage from "./RoomsPage";
+import Room from "./Room";
+import ReserveRoom from "./ReserveRoom";
 
 function Home(){
   return (
@@ -50,6 +52,16 @@ function App() {
             <Route path="/hotels/:hotelId/rooms" element={
               <ProtectedRoute>
                 <RoomsPage />
+              </ProtectedRoute>
+              } />
+            <Route path="/hotels/:hotelId/rooms/:roomId" element={
+              <ProtectedRoute>
+                <Room />
+              </ProtectedRoute>
+              } />
+            <Route path="/hotels/:hotelId/rooms/:roomId/reservations" element={
+                <ProtectedRoute>
+                <ReserveRoom />
               </ProtectedRoute>
               } />
         </Routes>
