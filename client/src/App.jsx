@@ -1,10 +1,11 @@
-import { Routes, Route, Link, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, Navigate, Outlet } from "react-router-dom";
 import Signup from "./Signup";
 import Login from "./Login";
 import Hotels from "./Hotels";
 import RoomsPage from "./RoomsPage";
 import Room from "./Room";
 import ReserveRoom from "./ReserveRoom";
+import NavBar from "./NavBar";
 
 function Home(){
   return (
@@ -32,47 +33,51 @@ function Home(){
 
 }
 
-function ProtectedRoute({children}) {
+function ProtectedRoute() { // לא צריך children יותר!
     const token = localStorage.getItem("token");
-    return token ? children : <Navigate to="/login" />;
-};
+    
+    // Outlet מייצג את "תתי הנתיבים" שירונדרו כאן
+    return token ? (
+      <>
+        <NavBar />
+        <main>
+          <Outlet /> 
+        </main>
+      </>
+    ) : (
+      <Navigate to="/login" />
+    );
+}
 
-function App() {
+function AppRoutes() {
     return (
         <Routes>
+            {/* --- ראוטים ציבוריים (ללא NavBar, פתוחים לכולם) --- */}
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Signup />} />
 
-            <Route path="/hotels" element={
-              <ProtectedRoute>
-                <Hotels />
-              </ProtectedRoute>
-              } />
-            <Route path="/hotels/:hotelId/rooms" element={
-              <ProtectedRoute>
-                <RoomsPage />
-              </ProtectedRoute>
-              } />
-            <Route path="/hotels/:hotelId/rooms/:roomId" element={
-              <ProtectedRoute>
-                <Room />
-              </ProtectedRoute>
-              } />
-            <Route path="/hotels/:hotelId/rooms/:roomId/reservations" element={
-                <ProtectedRoute>
-                <ReserveRoom />
-              </ProtectedRoute>
-              } />
+            {/* --- ראוטים מוגנים (כוללים NavBar, דורשים טוקן) --- */}
+            <Route element={<ProtectedRoute />}>
+                <Route path="/hotels" element={<Hotels />} />
+                <Route path="/hotels/:hotelId/rooms" element={<RoomsPage />} />
+                <Route path="/hotels/:hotelId/rooms/:roomId" element={<Room />} />
+                <Route path="/hotels/:hotelId/rooms/:roomId/reservations" element={<ReserveRoom />} />
+            </Route>
         </Routes>
     );
 };
+export default function App() {
+    return (
+            <AppRoutes />
+    );
+}
 
 const styles = {
+    // עיצוב למסך ה-Hero הראשי של עמוד הבית (תופס מסך מלא עם תמונת השקיעה)
     heroContainer: {
         height: "100vh",
         width: "100vw",
-        // שימוש בתמונת רקע איכותית של ים ושקיעה מבית Unsplash
         backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80')",
         backgroundSize: "cover",
         backgroundPosition: "center",
@@ -82,6 +87,7 @@ const styles = {
         color: "#ffffff",
         overflow: "hidden"
     },
+    // ההדר הפנימי והשקוף הייחודי של עמוד הבית בלבד
     header: {
         display: "flex",
         justifyContent: "space-between",
@@ -101,6 +107,7 @@ const styles = {
         fontSize: "16px",
         fontWeight: "500"
     },
+    // התוכן המרכזי שיושב באמצע ה-Hero של עמוד הבית
     mainContent: {
         flex: 1,
         display: "flex",
@@ -124,11 +131,12 @@ const styles = {
         display: "flex",
         gap: "20px"
     },
+    // כפתור ראשי מעודכן לכחול האחיד של האפליקציה כולה
     primaryButton: {
         padding: "12px 30px",
         fontSize: "18px",
         color: "#ffffff",
-        backgroundColor: "#007bff",
+        backgroundColor: "#2563eb", // הותאם ל-Blue-600 של שאר האתר לאחידות מושלמת
         textDecoration: "none",
         borderRadius: "25px",
         fontWeight: "bold",
@@ -148,5 +156,3 @@ const styles = {
         backdropFilter: "blur(5px)"
     }
 };
-
-export default App

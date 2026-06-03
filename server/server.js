@@ -5,7 +5,8 @@ import {hashPassword, validatePassword, createToken, auth, requiredRole} from ".
 
 const app = express();
 
-app.use(cors({origin:"http://localhost:5174"}));
+
+app.use(cors({origin:"http://localhost:5173"}));
 app.use(express.json());
 
 app.get("/", (req, res) => {
@@ -141,7 +142,9 @@ app.get("/api/hotels/:hotelId/rooms/:id", auth, async (req, res, next) => {
 // get available rooms
 app.get("/api/available_rooms", auth, async (req, res, next) => {
     try{
-        const {startDate, endDate} = req.query;
+        console.log("Headers:", req.headers['content-type']);
+        console.log("Body:", req.body);
+        const {startDate, endDate} = req.body;
         if (!startDate || !endDate) {
             return res.status(400).json({ message: "startDate and endDate are required" });
         };
@@ -177,8 +180,10 @@ app.get("/api/available_rooms", auth, async (req, res, next) => {
 // create reservation
 app.post("/api/hotels/:hotel_id/rooms/:room_id/reservations", auth, async (req, res, next) => {
     try{
+        console.log("Headers:", req.headers['content-type']);
+        console.log("Body:", req.body);
         const user_id = req.user_id;
-        const {startDate, endDate} = req.query;
+        const {startDate, endDate} = req.body;
         const hotel_id = Number(req.params.hotel_id);
         const room_id = Number(req.params.room_id);
             if (!startDate || !endDate) {
@@ -186,8 +191,22 @@ app.post("/api/hotels/:hotel_id/rooms/:room_id/reservations", auth, async (req, 
             };
         const start = new Date(startDate);
         const end = new Date(endDate);
+        const now = new Date();
 
-        const room = await prisma.room.findUnique({
+        now.setHours(0, 0, 0, 0);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(0, 0, 0, 0);
+        // 2. הגנה: ודא שתאריך הכניסה הוא מהיום והלאה
+        if (start < now) {
+            return res.status(400).json({ message: "Reservation start date must be today or in the future" });
+        }
+
+        // 3. הגנה: ודא שתאריך העזיבה הוא אחרי תאריך הכניסה
+        if (end <= start) {
+            return res.status(400).json({ message: "End date must be after the start date" });
+        }
+
+        const room = await prisma.room.findFirst({
             where:{
                 AND: [
                     {hotel_id: hotel_id},
@@ -195,6 +214,23 @@ app.post("/api/hotels/:hotel_id/rooms/:room_id/reservations", auth, async (req, 
                 ]
             }
             });
+        if (!room) {
+            return res.status(404).json({ message: "Room not found in this hotel" });
+        };
+        // 5. הגנה קריטית: בדיקה האם החדר כבר תפוס בתאריכים האלו
+        // לוגיקת חפיפה: הזמנה קיימת חופפת אם (Start A < End B) וגם (End A > Start B)
+        const conflictingReservation = await prisma.reservation.findFirst({
+            where: {
+                room_id: room_id,
+                AND: [
+                    { start_date: { lt: end } },  // תאריך התחלה של ההזמנה הקיימת קטן מתאריך הסיום המבוקש
+                    { end_date: { gt: start } }   // תאריך סיום של ההזמנה הקיימת גדול מתאריך ההתחלה המבוקש
+                ]
+            }
+        });
+        if (conflictingReservation) {
+            return res.status(409).json({ message: "The room is already booked for the selected dates" });
+        }
 
         // 1. חישוב ההפרש במילישניות
         const differenceInMs = end.getTime() - start.getTime();
@@ -222,7 +258,7 @@ app.post("/api/hotels/:hotel_id/rooms/:room_id/reservations", auth, async (req, 
                     total_price: total_price
                 }
     });
-    res.status(200).json({message: "Room booked successfully",
+    res.status(200).json({message:"Room booked successfully",
         details: reserveRoom
     }
     )
