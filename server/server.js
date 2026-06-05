@@ -113,6 +113,110 @@ app.get("/api/hotels/:hotelId/rooms", auth, async (req, res, next) => {
     }
 });
 
+// add new hotel
+app.post("/api/hotels", auth, requiredRole(["admin"]), async (req, res, next) => {
+    try{
+        const {name, stars, country, city, number_of_rooms, image_url} = req.body;
+
+        // 1. הגנה: בדיקת שדות חובה (שלא שלחו ערכים ריקים או undefined)
+        if (!name || !country || !city || stars === undefined || number_of_rooms === undefined) {
+            return res.status(400).json({ message: "Missing required fields: name, country, city, stars, and number_of_rooms are mandatory." });
+        };
+        // 2. הגנה: תקינות טווח כוכבים (למשל, בין 1 ל-5 כוכבים)
+        const starsNum = Number(stars);
+        if (isNaN(starsNum) || starsNum < 1 || starsNum > 5) {
+            return res.status(400).json({ message: "Stars must be a number between 1 and 5." });
+        };
+        // 3. הגנה: תקינות מספר חדרים (חייב להיות מספר חיובי)
+        const roomsNum = Number(number_of_rooms);
+        if (isNaN(roomsNum) || roomsNum < 1) {
+            return res.status(400).json({ message: "Number of rooms must be a valid positive number." });
+        };
+        // 4. הגנה מפני כפילויות: האם יש כבר מלון בשם הזה באותה העיר?
+        const existingHotel = await prisma.hotel.findFirst({
+            where: {
+                name: { equals: name, mode: 'insensitive' }, // בדיקה לא רגישה לאותיות גדולות/קטנות
+                city: { equals: city, mode: 'insensitive' }
+            }
+        });
+
+        if (existingHotel) {
+            return res.status(409).json({ message: "A hotel with this name already exists in this city." });
+        }
+
+        const newHotel = await prisma.hotel.create({
+            data: {
+                name,
+                stars: starsNum,
+                country,
+                city,
+                number_of_rooms: roomsNum,
+                image_url: image_url || null
+            }
+        });
+        return res.status(201).json({
+            message: "Hotel added to database successfully",
+            details: newHotel
+        });
+    } catch(err){
+        next(err);
+    }
+    
+} );
+
+// add new room By hotel ID
+app.post("/api/hotels/:hotelId/rooms", auth, requiredRole(["admin"]), async (req, res, next) => {
+    try {
+        const hotelId = Number(req.params.hotelId);
+        const { name, max_guests, price, size, image_url} = req.body;
+        // 1. הגנה: בדיקת שדות חובה (שלא שלחו ערכים ריקים או undefined)
+        if (!name || max_guests === undefined || price === undefined || size === undefined) {
+            return res.status(400).json({ message: "Missing required fields: name, max_guests, price, size are mandatory." });
+        };
+        // מספר אורחים חייב להיות חיובי
+        const maxGuests = Number(max_guests);
+        if (isNaN(maxGuests) || maxGuests < 1) {
+            return res.status(400).json({ message: "Number of guests must be a valid positive number." });
+        };
+        // מחיר חייב להיות חיובי
+        const isPriceCorrect = Number(price);
+        if (isNaN(isPriceCorrect) || isPriceCorrect < 0) {
+            return res.status(400).json({ message: "The price must be a valid positive number." });
+        };
+        const isSizeCorrect = Number(size);
+        if (isNaN(isSizeCorrect) || isSizeCorrect < 1) {
+            return res.status(400).json({ message: "Room size must be a valid positive number." });
+        };
+
+        const existingRoom = await prisma.room.findFirst({
+            where: {
+                hotel_id: hotelId,
+                name: { equals: name, mode: 'insensitive' }
+            }
+        });
+        if(existingRoom) return res.status(409).json({ message: "A room with this name already exists in this hotel." });
+
+        const newRoom = await prisma.room.create({
+            data: {
+                hotel_id: hotelId,
+                name,
+                max_guests, 
+                price,
+                size,
+                image_url
+            }
+        });
+
+        return res.status(201).json({
+            message: `Room added successfully to hotel ID - ${hotelId}`,
+            details: newRoom
+        })
+        
+    } catch (error) {
+        next(error);
+    }
+    
+})
 // get room by ID
 app.get("/api/hotels/:hotelId/rooms/:id", auth, async (req, res, next) => {
     try{
@@ -144,7 +248,7 @@ app.get("/api/available_rooms", auth, async (req, res, next) => {
     try{
         console.log("Headers:", req.headers['content-type']);
         console.log("Body:", req.body);
-        const {startDate, endDate} = req.body;
+        const {startDate, endDate} = req.query;
         if (!startDate || !endDate) {
             return res.status(400).json({ message: "startDate and endDate are required" });
         };
@@ -268,6 +372,116 @@ app.post("/api/hotels/:hotel_id/rooms/:room_id/reservations", auth, async (req, 
 
 });
 
+//get reservation by user ID
+app.get("/api/users/:userId/reservations", auth, async (req, res, next) => {
+    try {
+
+        const userId = Number(req.params.userId);
+        // 1. הגנה: בדיקה שהמשתמש המחובר מבקש את המידע של עצמו בלבד
+        // (בהנחה שמידלוור ה-auth שומר את ה-ID המוצפן ב-req.user.id)
+        if (req.user_id !== userId) {
+            return res.status(403).json({ message: "אין לך הרשאה לצפות בהזמנות אלו" });
+        };
+
+        const userReservations = await prisma.reservation.findMany({
+            where: {user_id: userId},
+            orderBy: {
+                created_at: 'desc'  // בונוס: מציג קודם את ההזמנות החדשות ביותר
+            }
+        });
+        if(userReservations.length === 0) return res.status(200).json({message: "No reservations"});
+
+        return res.status(200).json(userReservations);
+    } catch (error) {
+        next(error);
+    }
+    
+});
+
+// edit reservation by id
+app.patch("/api/users/:userId/reservations/:resId", auth, async (req, res, next) => {
+    try {
+        const urlUserId = Number(req.params.userId);
+        const reservationId = Number(req.params.resId); 
+
+        // 1. הגנה: בדיקת הרשאה (שהמשתמש מעדכן את של עצמו)
+        if (req.user_id !== urlUserId) {
+            return res.status(403).json({ error: "אין לך הרשאה לערוך הזמנה זו" });
+        }
+
+        // 2. הגנה: בדיקת תקינות תאריכים בסיסית (חובה שיישלחו תאריכים)
+        if (!req.body.start_date || !req.body.end_date) {
+            return res.status(400).json({ error: "יש לספק תאריך התחלה ותאריך סיום" });
+        }
+
+        if (new Date(req.body.start_date) >= new Date(req.body.end_date)) {
+            return res.status(400).json({ error: "תאריך הסיום חייב להיות אחרי תאריך ההתחלה" });
+        }
+
+        // 3. שליפת נתוני ההזמנה הנוכחית מה-DB
+        const currentReservation = await prisma.reservation.findUnique({
+            where: { id: reservationId }
+        });
+
+        if (!currentReservation || currentReservation.deleted_at !== null) {
+            return res.status(404).json({ error: "ההזמנה לא נמצאה או שבוטלה" });
+        }
+
+        // --- חילוץ מזהה החדר מההזמנה שתחת עריכה ---
+        const targetRoomId = currentReservation.room_id; 
+        
+        const targetStartDate = new Date(req.body.start_date);
+        const targetEndDate = new Date(req.body.end_date);
+
+        // 4. חיפוש הזמנות חופפות (הגנת כפל הזמנות על אותו חדר)
+        const conflictingReservation = await prisma.reservation.findFirst({
+            where: {
+                room_id: targetRoomId,      // משתמשים במזהה החדר שחולץ מההזמנה ב-DB
+                deleted_at: null, 
+                id: { not: reservationId }, // מתעלמים מההזמנה הנוכחית של המשתמש
+                AND: [
+                    { start_date: { lt: targetEndDate } },
+                    { end_date: { gt: targetStartDate } }
+                ]
+            }
+        });
+
+        if (conflictingReservation) {
+            return res.status(409).json({ error: "החדר כבר מוזמן בתאריכים החדשים המבוקשים" });
+        }
+
+        // 5. ביצוע העדכון (רק של התאריכים!)
+        const updateResult = await prisma.reservation.updateMany({
+            where: {
+                id: reservationId,
+                user_id: urlUserId,
+                deleted_at: null
+            },
+            data: {
+                start_date: targetStartDate,
+                end_date: targetEndDate
+            }
+        });
+
+        if (updateResult.count === 0) {
+            return res.status(404).json({ error: "עדכון ההזמנה נכשל" });
+        }
+
+        // שליפת הנוסח המעודכן לחזרה ל-Frontend
+        const updatedReservation = await prisma.reservation.findUnique({
+            where: { id: reservationId }
+        });
+
+        return res.status(200).json({
+            message: "ההזמנה עודכנה בהצלחה לתאריכים החדשים!",
+            reservation: updatedReservation
+        });
+    } catch (error) {
+        next(error);
+    }
+    
+});
+
 // Errors middleware
 app.use((err, req, res, next) => {
     // מדפיס את השגיאה המלאה לטרמינל שלך בשביל ה-Debugging
@@ -285,4 +499,4 @@ app.use((err, req, res, next) => {
     });
 });
 
-app.listen(3000, () => console.log("Server running on http://localhost:3000"));
+app.listen(8000, () => console.log("Server running on http://localhost:8000"));

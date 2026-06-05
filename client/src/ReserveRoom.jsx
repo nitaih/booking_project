@@ -55,7 +55,7 @@ export default function ReserveRoom(){
         // setError("");
 
         try{
-            const res = await fetch(`http://localhost:3000/api/hotels/${hotelId}/rooms/${roomId}/reservations`, {
+            const res = await fetch(`http://localhost:8000/api/hotels/${hotelId}/rooms/${roomId}/reservations`, {
                 method: "POST",
                 headers: authHeaders({"Content-Type": "application/json"}),
                 body: JSON.stringify({startDate, endDate})
@@ -188,8 +188,8 @@ export default function ReserveRoom(){
                             
                             {/* שורת מחיר מודגשת */}
                             <div style={styles.priceRow}>
-                                <span>💰 מחיר כולל לתשלום:</span>
-                                <strong>{totalPrice} ₪</strong>
+                                <span>💰  מחיר לתשלום (כולל 18% מע"מ):</span>
+                                <strong>{1.18 * totalPrice} ₪</strong>
                             </div>
                         </div>
 

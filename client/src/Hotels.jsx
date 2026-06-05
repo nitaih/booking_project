@@ -8,7 +8,7 @@ export default function Hotels(){
     const [hotels, setHotels] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const API_base = "http://localhost:3000/api";
+    const API_base = "http://localhost:8000/api";
     useEffect(() => {
         async function loadHotels() {
             try {
