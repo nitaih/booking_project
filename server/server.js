@@ -246,10 +246,8 @@ app.get("/api/hotels/:hotelId/rooms/:id", auth, async (req, res, next) => {
 // get available rooms
 app.get("/api/available_rooms", auth, async (req, res, next) => {
     try{
-        console.log("Headers:", req.headers['content-type']);
-        console.log("Body:", req.body);
-        const {startDate, endDate} = req.query;
-        if (!startDate || !endDate) {
+        const {start_date, end_date} = req.query;
+        if (!start_date || !start_date ) {
             return res.status(400).json({ message: "startDate and endDate are required" });
         };
         const start = new Date(startDate);
@@ -273,7 +271,7 @@ app.get("/api/available_rooms", auth, async (req, res, next) => {
                 hotel: true
             }
         });
-        if(availableRooms.length === 0) return res.status(200).json("no available rooms in that date");
+        if(availableRooms.length === 0) return res.status(200).json("No rooms found on these dates");
 
         res.status(200).json(availableRooms);
     } catch(err){
@@ -349,8 +347,8 @@ app.post("/api/hotels/:hotel_id/rooms/:room_id/reservations", auth, async (req, 
         // 3. שליפת מחיר החדר והפיכתו למספר (מכיוון שהוא חוזר כ-Decimal מפריזמה)
         const roomPrice = Number(room.price);
 
-        // 4. חישוב המחיר הסופי
-        const total_price = daysToCharge * roomPrice;
+        // 4. חישוב המחיר הסופי כולל מעמ
+        const total_price = 1.18*(daysToCharge * roomPrice);
 
         const reserveRoom = await prisma.reservation.create({
             data: {

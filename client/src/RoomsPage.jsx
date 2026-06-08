@@ -30,10 +30,14 @@ export default function RoomsPage(){
 
     }, [hotelId]);
     const hotelName = rooms[0]?.hotel?.name;
+    const hotelIdParam = useParams().hotelId;
+    const totalRooms = rooms[0]?.hotel?.number_of_rooms;
 
     return (
         <div>
-            <h1>{hotelName}</h1>       
+            <h1>{hotelName}</h1>  
+            <p>מספר סידורי של המלון: {hotelIdParam}</p>
+            {totalRooms && <p>סה"כ חדרים במלון: {totalRooms}</p>}     
             <ul style={styles.gridList}>
                 {
                     rooms.map(r => (

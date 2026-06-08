@@ -189,7 +189,7 @@ export default function ReserveRoom(){
                             {/* שורת מחיר מודגשת */}
                             <div style={styles.priceRow}>
                                 <span>💰  מחיר לתשלום (כולל 18% מע"מ):</span>
-                                <strong>{1.18 * totalPrice} ₪</strong>
+                                <strong>{totalPrice} ₪</strong>
                             </div>
                         </div>
 
