@@ -384,7 +384,7 @@ app.get("/api/users/:userId/reservations", auth, async (req, res, next) => {
         };
 
         const userReservations = await prisma.reservation.findMany({
-            where: {user_id: userId},
+            where: {user_id: userId, status: {not: "CANCELLED"}},
             include: {
                 hotel: true // אומר לפריזמה להביא את כל אובייקט המלון (ודא שהקשר בסכמה נקרא hotel)
             },
