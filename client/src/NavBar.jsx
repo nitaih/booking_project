@@ -1,5 +1,7 @@
 import React from "react";
 import { useNavigate, Link } from "react-router-dom";
+// ייבוא האייקונים החדשים מתוך Lucide
+import { Hotel, User, LogOut, LogIn } from "lucide-react";
 
 export default function NavBar(){
     const navigate = useNavigate();
@@ -9,37 +11,59 @@ export default function NavBar(){
     function handleAuthAction(){
         if(isLoggedIn){
             localStorage.removeItem("token");
-
             alert("see you later");
             navigate("/");
         } else {
-            navigate("/login")
+            navigate("/login");
         }
     };
 
     return(
         <header style={styles.navbar} dir="rtl">
+            {/* אפקט הובר עדין לכפתור האזור האישי וההתחברות */}
+            <style>{`
+                .personal-link:hover { background-color: #f3f4f6 !important; color: #1f2937 !important; }
+                .btn-auth:hover { opacity: 0.9; transform: translateY(-1px); }
+            `}</style>
+
             {/* צד ימין: שם האפליקציה/לוגו - לחיץ ומחזיר לעמוד הבית */}
             <Link to="/hotels" style={styles.logoContainer}>
-                <span style={styles.logoIcon}>🏨</span>
+                {/* אייקון מלון מודרני מבית Lucide */}
+                <Hotel size={24} color="#2563eb" />
                 <h1 style={styles.logoText}>HotelBooker</h1>
             </Link>
 
-            {/* צד שמאל: כפתור התחברות / התנתקות דינמי */}
+            {/* צד שמאל: כפתורים דינמיים */}
             <div style={styles.actionsContainer}>
+                
+                {/* --- כפתור אזור אישי: יוצג רק אם המשתמש מחובר --- */}
+                {isLoggedIn && (
+                    <Link to="/user-page" className="personal-link" style={styles.personalAreaLink}>
+                        {/* אייקון משתמש נקי */}
+                        <User size={16} style={{ marginLeft: "8px" }} />
+                        האזור האישי שלי
+                    </Link>
+                )}
+
                 {isLoggedIn ? (
                     <button 
                         onClick={handleAuthAction} 
-                        style={{ ...styles.authButton, ...styles.logoutBtn }}
+                        className="btn-auth"
+                        style={{ ...styles.authButton, ...styles.personalAreaLink }}
                     >
-                        🚪 התנתק (Logout)
+                        {/* אייקון התנתקות */}
+                        <LogOut size={16} style={{ marginLeft: "8px" }} />
+                        התנתק (Logout)
                     </button>
                 ) : (
                     <button 
                         onClick={handleAuthAction} 
+                        className="btn-auth"
                         style={{ ...styles.authButton, ...styles.loginBtn }}
                     >
-                        🔑 התחבר (Login)
+                        {/* אייקון התחברות */}
+                        <LogIn size={16} style={{ marginLeft: "8px" }} />
+                        התחבר (Login)
                     </button>
                 )}
             </div>
@@ -56,19 +80,16 @@ const styles = {
     backgroundColor: '#ffffff',
     boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
     borderBottom: '1px solid #f3f4f6',
-    position: 'sticky', // גורם לבאנר להישאר קבוע למעלה בזמן גלילה
+    position: 'sticky', 
     top: 0,
-    zIndex: 100, // מבטיח שהוא יהיה מעל כרטיסיות המלונות והחדרים
+    zIndex: 100, 
   },
   logoContainer: {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    textDecoration: 'none', // מבטל קו תחתון של קישור
+    textDecoration: 'none', 
     color: 'inherit',
-  },
-  logoIcon: {
-    fontSize: '24px',
   },
   logoText: {
     fontSize: '20px',
@@ -81,8 +102,11 @@ const styles = {
   actionsContainer: {
     display: 'flex',
     alignItems: 'center',
+    gap: '12px', // מוסיף מרווח אחיד ויפה בין האזור האישי לכפתור ההתחברות
   },
   authButton: {
+    display: 'flex', // מאפשר לאייקון ולטקסט לשבת בשורה אחת ישרה
+    alignItems: 'center',
     border: 'none',
     padding: '10px 20px',
     borderRadius: '8px',
@@ -91,17 +115,29 @@ const styles = {
     cursor: 'pointer',
     transition: 'all 0.2s ease',
   },
-  // עיצוב ספציפי לכפתור התחברות (כחול כמו שאר האתר)
   loginBtn: {
     backgroundColor: '#2563eb',
     color: '#ffffff',
     boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)',
-    onMouseEnter: (e) => e.currentTarget.style.backgroundColor = '#1d4ed8', // אפשר להוסיף inline hover בקומפוננטה
   },
-  // עיצוב ספציפי לכפתור התנתקות (אפור-עדין או אדום עדין שלא יבלוט מדי)
   logoutBtn: {
     backgroundColor: '#f3f4f6',
     color: '#4b5563',
     border: '1px solid #e5e7eb',
-  }
+  },
+  
+  // תיקון עיצוב האזור האישי: כעת קריא ובולט על רקע ה-NavBar הלבן
+  personalAreaLink: {
+        display: 'flex', // מאפשר לאייקון ולטקסט לשבת בשורה אחת ישרה
+        alignItems: 'center',
+        color: "#4b5563", // צבע אפור כהה שמתאים לכפתור ההתנתקות
+        textDecoration: "none",
+        fontWeight: "600",
+        fontSize: "0.95rem",
+        padding: "10px 16px",
+        borderRadius: "8px",
+        backgroundColor: "#f9fafb", // רקע אפרפר בהיר, נקי מאוד
+        border: "1px solid #e5e7eb",
+        transition: "all 0.2s ease",
+    }
 };

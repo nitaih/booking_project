@@ -385,8 +385,11 @@ app.get("/api/users/:userId/reservations", auth, async (req, res, next) => {
 
         const userReservations = await prisma.reservation.findMany({
             where: {user_id: userId},
+            include: {
+                hotel: true // אומר לפריזמה להביא את כל אובייקט המלון (ודא שהקשר בסכמה נקרא hotel)
+            },
             orderBy: {
-                created_at: 'desc'  // בונוס: מציג קודם את ההזמנות החדשות ביותר
+                created_at: 'desc'
             }
         });
         if(userReservations.length === 0) return res.status(200).json({message: "No reservations"});
@@ -481,6 +484,40 @@ app.patch("/api/users/:userId/reservations/:resId", auth, async (req, res, next)
     }
     
 });
+
+// delete reservation by id
+app.delete("/api/users/:userId/reservations/:resId", auth, async (req, res, next) => {
+    try {
+        const urlUserId = Number(req.params.userId);
+        const reservationId = Number(req.params.resId); 
+
+        // 1. הגנה: בדיקת הרשאה (שהמשתמש מעדכן את של עצמו)
+        if (req.user_id !== urlUserId) {
+            return res.status(403).json({ error: "אין לך הרשאה לערוך הזמנה זו" });
+        };
+        // 2. הגנה: בדיקה אם קיימת הזמה עם ה ID
+        const currentReservation = await prisma.reservation.findFirst({
+            where: { id: reservationId }
+        });
+
+        if (!currentReservation || currentReservation.deleted_at !== null) {
+            return res.status(404).json({ error: "ההזמנה לא נמצאה או שבוטלה" });
+        };
+
+        const deleteReservation = await prisma.reservation.update({
+            where: {id: reservationId},
+            data: {deleted_at: new Date(),
+                status: "CANCELLED"
+            }
+        });
+        return res.status(200).json({
+            message: "reservation removed",
+            details: deleteReservation
+        })
+    } catch (error) {
+        next(error);
+    }
+})
 
 // Errors middleware
 app.use((err, req, res, next) => {

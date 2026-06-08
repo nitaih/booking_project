@@ -6,6 +6,7 @@ import RoomsPage from "./RoomsPage";
 import Room from "./Room";
 import ReserveRoom from "./ReserveRoom";
 import NavBar from "./NavBar";
+import UserPage from "./UserPage";
 
 function Home(){
   return (
@@ -63,6 +64,7 @@ function AppRoutes() {
                 <Route path="/hotels/:hotelId/rooms" element={<RoomsPage />} />
                 <Route path="/hotels/:hotelId/rooms/:roomId" element={<Room />} />
                 <Route path="/hotels/:hotelId/rooms/:roomId/reservations" element={<ReserveRoom />} />
+                <Route path="/user-page" element={<UserPage />} />
             </Route>
         </Routes>
     );
